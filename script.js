@@ -49,8 +49,13 @@ var Game = function(images) {
     var urls = [];
     //create image urls for all images
     $(images).each(function(i, el){
-        urls.push(URL.createObjectURL(el));
-    })
+        type = el.type.split('/');
+        //filter jpeg and png
+        if(type.length == 2 && ['jpeg', 'png'].indexOf(type[1]) >= 0){
+            console.log(el);
+            urls.push(URL.createObjectURL(el));
+        }
+    });
     //start a game
     this.start = function() {
         new Riddle(urls[current]);
