@@ -28,16 +28,19 @@ $(document).ready(function() {
    $("p").click(function() {
        $("#input").click();
    });
-   //resize handler
-   $(window).resize(function() {
-       var svg = $("#svg");
-       var img = $("#riddle");
-       if(svg.length > 0 && img.length > 0) {
-           svg.height(img.height())
-                .width(img.width())
-                .css("left", img[0].x)
-                .css("top", img[0].y);
-       }
+
+   var readmeLoaded = false;
+   $('#readme-container').click(function(){
+    if($('#readme-container .content').toggle().is(':hidden') || readmeLoaded) return;
+
+    $.ajax('https://api.github.com/repos/ocjojo/dalli-klick/readme', {
+        headers: {          
+            Accept: "application/vnd.github.VERSION.html" 
+        }
+    }).then(function(html){
+        $('#readme-container .content').html(html);
+        readmeLoaded = true;
+    });
    });
 });
 
@@ -59,7 +62,7 @@ var Game = function(images) {
     //start a game
     this.start = function() {
         new Riddle(urls[current]);
-    }
+    };
     //create riddle for next image if exists, else end game
     this.next = function() {
         current++;
@@ -72,11 +75,11 @@ var Game = function(images) {
     //on game end
     //optional message to display
     this.end = function(message) {
-        var s = typeof message !== "undefined" ? message : "Danke für's Mitspielen"
+        var s = typeof message !== "undefined" ? message : "Danke für's Mitspielen";
         $("body").html('<div id="content"><img src="logo.png"/><p>'
              + s + '</p></div>');
-    }
-}
+    };
+};
 
 var Riddle = (function(imageUrl) {
     var finished;
@@ -89,47 +92,50 @@ var Riddle = (function(imageUrl) {
         img.id = "riddle";
         img.src = imageUrl;
         img.onload = function() {
+            //read dimensions before appending to get natural size
+            var h = img.height;
+            var w = img.width;
+            console.log(w, h);
+
+            //append riddle to content
+            img = $(img);
+            $('#content').html(img);
+
             var color = COLORS[Math.floor(Math.random()*COLORS.length)];
-            //svg height
-            var h = img.height();
-            //svg width
-            var w = img.width();
+
             //vertices in height
             var hNum = RECTS;
             // width between vertices
-            var interval = img.height() / hNum;
+            var interval = h / hNum;
             //vertices in width
-            var wNum =  Math.ceil(img.width() / interval);
+            var wNum =  Math.ceil(w / interval);
             //max difference to standard rectangle
             var diff = interval/DIV;
-            // temporary save last row for the next rectangles
-            var lastRow = new Array();
+            
             //create svg and append to content
             $('<div id="svg"></div>').appendTo('#content');
             var svg = document.createElementNS(NS, "svg");
-            $(svg).appendTo('#svg')
-                .attr({
+            $(svg).attr({
                     "height" : "100%",
                     "width" : "100%"
                 })
+                .appendTo('#svg');
             svg.setAttributeNS(null, "viewBox", "0 0 " + w + " " + h);
-            //position svg div
-            $("#svg").css("left", $("#riddle")[0].x)
-                .css("top", $("#riddle")[0].y)
-                .height(h)
-                .width(w+2);
+
+            // temporary save last row for the next rectangles
+            var lastRow;
             for (var i = 0; i <= hNum; i++) {
                 // new temporary row
-                var tmpRow = new Array();
+                var tmpRow = [];
                 for (var j = 0; j <= wNum; j++) {
                     var tmp = new Vertice();
                     tmp.x = j * interval;
                     tmp.y = i * interval;
                     // if edge only randomize the edge direction
-                    if(j!=0 && j!=wNum) {
+                    if(j!==0 && j!=wNum) {
                          tmp.x += randPosNeg()*diff;
                     }
-                    if(i!=0 && i!=hNum){
+                    if(i!==0 && i!=hNum){
                         tmp.y += randPosNeg()*diff;
                     }
                     tmpRow[j] = tmp;
@@ -147,10 +153,7 @@ var Riddle = (function(imageUrl) {
             toggleShade();
             //register eventHandlers;
             eventHandlers();
-        }
-        img = $(img);
-        //append riddle to content
-        $('#content').html(img);
+        };
     }
     // randomly returns +1 and -1
     function randPosNeg() {
@@ -186,7 +189,7 @@ var Riddle = (function(imageUrl) {
     //
     Riddle.prototype.handlers = function(){
         this.eventHandlers();
-    }
+    };
 
     var handlers = false;
     function eventHandlers() {
@@ -230,9 +233,9 @@ var Riddle = (function(imageUrl) {
     return Riddle;
 })();
 var Vertice = function() {
-    this.x;
-    this.y;
-}
+    //this.x
+    //this.y
+};
 Vertice.prototype.toString = function() {
     return this.x + ',' + this.y;
 };
